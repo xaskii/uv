@@ -614,7 +614,7 @@ impl TestContext {
             "Activate with: source $1/[BIN]/activate".to_string(),
         ));
         filters.push((
-            r"Activate with: source (.*)/bin/activate(?:\.\w+)?".to_string(),
+            r"Activate with: source (.*)/bin/activate".to_string(),
             "Activate with: source $1/[BIN]/activate".to_string(),
         ));
 
@@ -725,8 +725,6 @@ impl TestContext {
         .unwrap();
 
         command
-            // When running the tests in a venv, ignore that venv, otherwise we'll capture warnings.
-            .env_remove(EnvVars::VIRTUAL_ENV)
             // Disable wrapping of uv output for readability / determinism in snapshots.
             .env(EnvVars::UV_NO_WRAP, "1")
             // While we disable wrapping in uv above, invoked tools may still wrap their output so
@@ -744,11 +742,13 @@ impl TestContext {
             // Since downloads, fetches and builds run in parallel, their message output order is
             // non-deterministic, so can't capture them in test output.
             .env(EnvVars::UV_TEST_NO_CLI_PROGRESS, "1")
-            .env_remove(EnvVars::UV_CACHE_DIR)
-            .env_remove(EnvVars::UV_TOOL_BIN_DIR)
-            .env_remove(EnvVars::XDG_CONFIG_HOME)
-            .env_remove(EnvVars::XDG_DATA_HOME)
             .current_dir(self.temp_dir.path());
+
+        // For Unix, we pretend the tests run in a bash for the activate hint, for Windows, shell
+        // detection assumes PowerShell if `PROMPT` is not set.
+        if cfg!(unix) {
+            command.env("SHELL", "/bin/bash");
+        }
 
         for (key, value) in &self.extra_env {
             command.env(key, value);
@@ -1084,6 +1084,9 @@ impl TestContext {
         command
     }
 
+    /// The path to the Python interpreter in the venv.
+    ///
+    /// Don't use this for `Command::new`, use `Self::python_command` instead.
     pub fn interpreter(&self) -> PathBuf {
         let venv = &self.venv;
         if cfg!(unix) {
@@ -1307,6 +1310,7 @@ impl TestContext {
     /// all tests, but with the given binary.
     fn new_command_with(&self, bin: &Path) -> Command {
         let mut command = Command::new(bin);
+        command.env_clear();
         // I believe the intent of all tests is that they are run outside the
         // context of an existing git repository. And when they aren't, state
         // from the parent git repository can bleed into the behavior of `uv
@@ -1385,6 +1389,7 @@ pub fn get_python(version: &PythonVersion) -> PathBuf {
 /// Create a virtual environment at the given path.
 pub fn create_venv_from_executable<P: AsRef<Path>>(path: P, cache_dir: &ChildPath, python: &Path) {
     assert_cmd::Command::new(get_bin())
+        .env_clear()
         .arg("venv")
         .arg(path.as_ref().as_os_str())
         .arg("--cache-dir")
