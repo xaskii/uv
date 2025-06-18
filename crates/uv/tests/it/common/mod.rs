@@ -750,6 +750,14 @@ impl TestContext {
             command.env("SHELL", "/bin/bash");
         }
 
+        // Without `SYSTEMROOT`, Windows can't resolve DNS, plus proxy settings in case they are needed.
+        let env_vars = ["SYSTEMROOT", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY"];
+        for env_var in env_vars {
+            if let Some(system_root) = env::var_os(env_var) {
+                command.env(env_var, system_root);
+            }
+        }
+
         for (key, value) in &self.extra_env {
             command.env(key, value);
         }
