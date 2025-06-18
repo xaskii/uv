@@ -1338,13 +1338,13 @@ impl TestContext {
             command.env(EnvVars::LC_ALL, "C");
         }
 
-        /// Standard Windows environment variables that CLI applications can rely on
-        ///
-        /// Sources:
-        /// - https://ss64.com/nt/syntax-variables.html
-        /// - https://learn.microsoft.com/en-us/windows/win32/procthread/environment-variables
-        /// - https://en.wikipedia.org/wiki/Environment_variable
-        /// - https://www.elevenforum.com/t/complete-list-of-environment-variables-in-windows-11.11212/
+        // Standard Windows environment variables
+        //
+        // Sources:
+        // - https://ss64.com/nt/syntax-variables.html
+        // - https://learn.microsoft.com/en-us/windows/win32/procthread/environment-variables
+        // - https://en.wikipedia.org/wiki/Environment_variable
+        // - https://www.elevenforum.com/t/complete-list-of-environment-variables-in-windows-11.11212/
         let env_vars = &[
             "ALLUSERSPROFILE",           // C:\ProgramData
             "APPDATA",                   // C:\Users\{username}\AppData\Roaming
