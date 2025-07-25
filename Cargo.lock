@@ -5029,6 +5029,7 @@ dependencies = [
  "uv-small-str",
  "uv-static",
  "uv-torch",
+ "uv-variants",
  "uv-version",
  "uv-warnings",
  "wiremock",
