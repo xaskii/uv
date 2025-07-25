@@ -18,7 +18,7 @@ use uv_configuration::{
     PreviewMode, TargetTriple,
 };
 use uv_dispatch::BuildDispatch;
-use uv_distribution::{DistributionDatabase, resolve_variants};
+use uv_distribution::{DistributionDatabase, VariantProviderCache, resolve_variants};
 use uv_distribution_types::{
     DirectorySourceDist, Dist, Index, Requirement, Resolution, ResolvedDist, SourceDist,
 };
@@ -709,6 +709,7 @@ pub(super) async fn do_sync(
         DistributionDatabase::new(&client, &build_dispatch, concurrency.downloads);
 
     // Read the lockfile.
+    let variants_cache = Arc::new(VariantProviderCache::default());
     let resolution = target
         .to_resolution(
             &marker_env,
@@ -718,6 +719,7 @@ pub(super) async fn do_sync(
             build_options,
             &install_options,
             distribution_database,
+            variants_cache.clone(),
         )
         .await?;
 
@@ -770,7 +772,7 @@ pub(super) async fn do_sync(
     // TODO(konsti): Pass this into operations::install
     let distribution_database =
         DistributionDatabase::new(&client, &build_dispatch, concurrency.downloads);
-    let resolution = resolve_variants(resolution, distribution_database).await?;
+    let resolution = resolve_variants(resolution, distribution_database, variants_cache).await?;
 
     let site_packages = SitePackages::from_environment(venv)?;
 
