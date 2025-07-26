@@ -347,13 +347,24 @@ impl<'a> IndexLocations {
         if self.no_index {
             Either::Left(std::iter::empty())
         } else {
+            // Determine whether the user defined a default index.
+            let mut seen = FxHashSet::default();
+            let has_default = self
+                .indexes
+                .iter()
+                .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
+                .any(|index| index.default);
+
             let mut seen = FxHashSet::default();
             Either::Right(
                 self.indexes
                     .iter()
                     .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
                     .filter(|index| !index.default && !index.explicit)
-                    .chain(std::iter::once(&*VARIANT_INDEX)),
+                    .chain(Some(&*VARIANT_INDEX).filter(move |_| {
+                        // If the user defined a default index, omit the variant index.
+                        !has_default
+                    })),
             )
         }
     }
@@ -383,8 +394,7 @@ impl<'a> IndexLocations {
             Either::Right(
                 self.indexes
                     .iter()
-                    .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
-                    .chain(std::iter::once(&*VARIANT_INDEX)),
+                    .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name))),
             )
         }
     }
@@ -429,7 +439,6 @@ impl<'a> IndexLocations {
                     .iter()
                     .chain(self.flat_index.iter())
                     .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
-                    .chain(std::iter::once(&*VARIANT_INDEX))
             } {
                 if index.default {
                     if default {
@@ -440,6 +449,7 @@ impl<'a> IndexLocations {
                 indexes.push(index);
             }
             if !default {
+                indexes.push(&*VARIANT_INDEX);
                 indexes.push(&*DEFAULT_INDEX);
             }
 
@@ -564,13 +574,24 @@ impl<'a> IndexUrls {
         if self.no_index {
             Either::Left(std::iter::empty())
         } else {
+            // Determine whether the user defined a default index.
+            let mut seen = FxHashSet::default();
+            let has_default = self
+                .indexes
+                .iter()
+                .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
+                .any(|index| index.default);
+
             let mut seen = FxHashSet::default();
             Either::Right(
                 self.indexes
                     .iter()
                     .filter(move |index| index.name.as_ref().is_none_or(|name| seen.insert(name)))
                     .filter(|index| !index.default && !index.explicit)
-                    .chain(std::iter::once(&*VARIANT_INDEX)),
+                    .chain(Some(&*VARIANT_INDEX).filter(move |_| {
+                        // If the user defined a default index, omit the variant index.
+                        !has_default
+                    })),
             )
         }
     }
