@@ -1216,6 +1216,7 @@ impl SyncSettings {
             exact,
             no_install_project,
             no_install_workspace,
+            no_install_local,
             no_install_package,
             locked,
             frozen,
@@ -1281,6 +1282,7 @@ impl SyncSettings {
             install_options: InstallOptions::new(
                 no_install_project,
                 no_install_workspace,
+                no_install_local,
                 no_install_package,
             ),
             modifications: if flag(exact, inexact, "inexact").unwrap_or(true) {
@@ -1809,6 +1811,7 @@ impl ExportSettings {
             no_emit_project,
             no_emit_workspace,
             no_emit_package,
+            no_emit_local,
             locked,
             frozen,
             resolver,
@@ -1851,6 +1854,7 @@ impl ExportSettings {
             install_options: InstallOptions::new(
                 no_emit_project,
                 no_emit_workspace,
+                no_emit_local,
                 no_emit_package,
             ),
             output_file,

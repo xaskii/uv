@@ -3418,6 +3418,12 @@ pub struct SyncArgs {
     #[arg(long)]
     pub no_install_workspace: bool,
 
+    /// Do not install any local packages
+    ///
+    /// FIXME(xaskii): longer description here
+    #[arg(long)]
+    pub no_install_local: bool,
+
     /// Do not install the given package(s).
     ///
     /// By default, all of the project's dependencies are installed into the environment. The
@@ -3486,6 +3492,7 @@ pub struct SyncArgs {
         conflicts_with = "package",
         conflicts_with = "no_install_project",
         conflicts_with = "no_install_workspace",
+        conflicts_with = "no_install_local",
         conflicts_with = "extra",
         conflicts_with = "all_extras",
         conflicts_with = "no_extra",
@@ -4201,6 +4208,12 @@ pub struct ExportArgs {
     /// exclusion of all the workspace members while retaining their dependencies.
     #[arg(long, alias = "no-install-workspace")]
     pub no_emit_workspace: bool,
+
+    /// Do not emit any local packages
+    ///
+    /// FIXME(xaskii): Need long description here
+    #[arg(long, alias = "no-install-local")]
+    pub no_emit_local: bool,
 
     /// Do not emit the given package(s).
     ///
