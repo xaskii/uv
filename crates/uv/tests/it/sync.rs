@@ -4849,6 +4849,83 @@ fn no_install_workspace() -> Result<()> {
     Ok(())
 }
 
+/// Avoid syncing local packages when `--no-install-local` is provided.
+#[test]
+fn no_install_local() -> Result<()> {
+    let context = TestContext::new("3.12");
+
+    let pyproject_toml = context.temp_dir.child("pyproject.toml");
+    pyproject_toml.write_str(
+        r#"
+        [project]
+        name = "project"
+        version = "0.1.0"
+        requires-python = ">=3.12"
+        dependencies = ["anyio==3.7.0", "localpkg"]
+
+        [build-system]
+        requires = ["setuptools>=42"]
+        build-backend = "setuptools.build_meta"
+
+        [tool.uv.sources]
+        localpkg = { path = "./localpkg" }
+        "#,
+    )?;
+
+    // Add a local package.
+    let localpkg = context.temp_dir.child("localpkg");
+    localpkg.create_dir_all()?;
+    let localpkg_pyproject = localpkg.child("pyproject.toml");
+    localpkg_pyproject.write_str(
+        r#"
+        [project]
+        name = "localpkg"
+        version = "0.1.0"
+        requires-python = ">=3.12"
+        "#,
+    )?;
+
+    // Generate a lockfile.
+    context.lock().assert().success();
+
+    // Running with `--no-install-local` should install `anyio` but not `localpkg`.
+    uv_snapshot!(context.filters(), context.sync().arg("--no-install-local"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    Resolved 5 packages in [TIME]
+    Prepared 3 packages in [TIME]
+    Installed 3 packages in [TIME]
+     + anyio==3.7.0
+     + idna==3.6
+     + sniffio==1.3.1
+    ");
+
+    // Remove the virtual environment.
+    fs_err::remove_dir_all(&context.venv)?;
+
+    // We don't require the `pyproject.toml` for local packages, if `--frozen` is provided.
+    fs_err::remove_file(localpkg.join("pyproject.toml"))?;
+
+    uv_snapshot!(context.filters(), context.sync().arg("--no-install-local").arg("--frozen"), @r"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    Using CPython 3.12.[X] interpreter at: [PYTHON-3.12]
+    Creating virtual environment at: .venv
+    Installed 3 packages in [TIME]
+     + anyio==3.7.0
+     + idna==3.6
+     + sniffio==1.3.1
+    ");
+
+    Ok(())
+}
+
 /// Avoid syncing the target package when `--no-install-package` is provided.
 #[test]
 fn no_install_package() -> Result<()> {

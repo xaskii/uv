@@ -303,7 +303,8 @@ impl<'lock> ExportableRequirements<'lock> {
             })
             .filter(|(_index, package)| {
                 install_options.include_package(
-                    &package.id.name,
+                    package.name(),
+                    || package.id.source.is_local(),
                     target.project_name(),
                     target.lock().members(),
                 )

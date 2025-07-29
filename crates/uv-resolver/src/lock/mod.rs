@@ -3551,7 +3551,10 @@ impl Source {
     ///
     /// We also assume that Git sources are immutable, since a Git source encodes a specific commit.
     fn is_immutable(&self) -> bool {
-        matches!(self, Self::Registry(..) | Self::Git(_, _))
+        matches!(
+            self,
+            Self::Registry(_) | Self::Git(_, _) | Self::Direct(_, _)
+        )
     }
 
     /// Returns `true` if the source is that of a wheel.
@@ -3687,6 +3690,14 @@ impl Source {
                 Some(false)
             }
         }
+    }
+
+    /// Check if a package is local by examining its source.
+    pub(crate) fn is_local(&self) -> bool {
+        matches!(
+            self,
+            Self::Path(_) | Self::Directory(_) | Self::Editable(_) | Self::Virtual(_)
+        )
     }
 }
 

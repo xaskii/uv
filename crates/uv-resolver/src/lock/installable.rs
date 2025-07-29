@@ -564,6 +564,7 @@ pub trait Installable<'lock> {
     ) -> Result<Node, LockError> {
         if install_options.include_package(
             package.name(),
+            || package.id.source.is_local(),
             self.project_name(),
             self.lock().members(),
         ) {

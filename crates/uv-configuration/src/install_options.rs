@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use tracing::debug;
 
 use uv_pep508::PackageName;
@@ -34,45 +32,52 @@ impl InstallOptions {
     /// Returns `true` if a package passes the install filters.
     pub fn include_package(
         &self,
-        package: &PackageName,
-        project_name: Option<&PackageName>,
-        members: &BTreeSet<PackageName>,
+        package_name: &uv_pep508::PackageName,
+        is_local: impl FnOnce() -> bool,
+        project_name: Option<&uv_pep508::PackageName>,
+        members: &std::collections::BTreeSet<uv_pep508::PackageName>,
     ) -> bool {
         // If `--no-install-project` is set, remove the project itself.
         if self.no_install_project {
             if let Some(project_name) = project_name {
-                if package == project_name {
-                    debug!("Omitting `{package}` from resolution due to `--no-install-project`");
+                if package_name == project_name {
+                    debug!(
+                        "Omitting `{}` from resolution due to `--no-install-project`",
+                        package_name
+                    );
                     return false;
                 }
             }
         }
 
-        // If `--no-install-workspace` is set, remove the project and any workspace members.
+        // If `--no-install-workspace` is set, remove workspace members.
         if self.no_install_workspace {
-            // In some cases, the project root might be omitted from the list of workspace members
-            // encoded in the lockfile. (But we already checked this above if `--no-install-project`
-            // is set.)
-            if !self.no_install_project {
-                if let Some(project_name) = project_name {
-                    if package == project_name {
-                        debug!(
-                            "Omitting `{package}` from resolution due to `--no-install-workspace`"
-                        );
-                        return false;
-                    }
-                }
+            if members.contains(package_name) {
+                debug!(
+                    "Omitting `{}` from resolution due to `--no-install-workspace`",
+                    package_name
+                );
+                return false;
             }
+        }
 
-            if members.contains(package) {
-                debug!("Omitting `{package}` from resolution due to `--no-install-workspace`");
+        // If `--no-install-local` is set, remove local packages.
+        if self.no_install_local {
+            if is_local() {
+                debug!(
+                    "Omitting `{}` from resolution due to `--no-install-local`",
+                    package_name
+                );
                 return false;
             }
         }
 
         // If `--no-install-package` is provided, remove the requested packages.
-        if self.no_install_package.contains(package) {
-            debug!("Omitting `{package}` from resolution due to `--no-install-package`");
+        if self.no_install_package.contains(package_name) {
+            debug!(
+                "Omitting `{}` from resolution due to `--no-install-package`",
+                package_name
+            );
             return false;
         }
 
